@@ -30,15 +30,17 @@ function Weather() {
   const [weatherData, setWeatherData] = useState(null);
   const [extendedForecast, setExtendedForecast] = useState(null);
   const inputRef = useRef(null);
-  const cities = ["Oslo", "Lillestrøm", "Halden", "Manila", "London"];
+  const cities = ["Oslo", "Halden", "Lillestrøm", "Alanya", "London"];
 
   const getForecast = async (lat, lon) => {
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${import.meta.env.VITE_APP_ID}&units=metric`
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${
+          import.meta.env.VITE_APP_ID
+        }&units=metric`
       );
       const data = await response.json();
-      
+
       const groupedData = data.list.reduce((acc, item) => {
         const date = new Date(item.dt * 1000).toLocaleDateString();
         if (!acc[date]) {
@@ -46,21 +48,21 @@ function Weather() {
             date: item.dt,
             temps: [],
             icons: [],
-            rain: []
+            rain: [],
           };
         }
         acc[date].temps.push(item.main.temp);
         acc[date].icons.push(item.weather[0].icon);
-        acc[date].rain.push(item.rain ? item.rain['3h'] : 0);
+        acc[date].rain.push(item.rain ? item.rain["3h"] : 0);
         return acc;
       }, {});
 
-      const processedData = Object.values(groupedData).map(day => ({
+      const processedData = Object.values(groupedData).map((day) => ({
         date: day.date,
         maxTemp: Math.max(...day.temps),
         minTemp: Math.min(...day.temps),
         icon: day.icons[Math.floor(day.icons.length / 2)],
-        rainSum: day.rain.reduce((a, b) => a + b, 0)
+        rainSum: day.rain.reduce((a, b) => a + b, 0),
       }));
 
       setExtendedForecast(processedData);
@@ -72,7 +74,9 @@ function Weather() {
   const search = async (searchData) => {
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${searchData}&appid=${import.meta.env.VITE_APP_ID}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?q=${searchData}&appid=${
+          import.meta.env.VITE_APP_ID
+        }&units=metric`
       );
       const data = await response.json();
 
@@ -89,7 +93,7 @@ function Weather() {
     setWeatherData(null);
     setExtendedForecast(null);
     if (inputRef.current) {
-      inputRef.current.value = '';
+      inputRef.current.value = "";
     }
   };
 
@@ -102,28 +106,28 @@ function Weather() {
           </button>
         )}
         <div className="searchbar">
-          <input 
-            ref={inputRef} 
-            type="text" 
+          <input
+            ref={inputRef}
+            type="text"
             placeholder="Search locations"
             onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                search(inputRef.current?.value || '');
+              if (e.key === "Enter") {
+                search(inputRef.current?.value || "");
               }
             }}
           />
           <img
             src={search_icon}
             alt=""
-            onClick={() => search(inputRef.current?.value || '')}
+            onClick={() => search(inputRef.current?.value || "")}
           />
         </div>
       </div>
 
       <div className="city-buttons">
         {cities.map((city) => (
-          <button 
-            key={city} 
+          <button
+            key={city}
             className="city-button"
             onClick={() => {
               if (inputRef.current) {
@@ -176,23 +180,29 @@ function Weather() {
                 {extendedForecast.slice(0, 5).map((day, index) => (
                   <div key={index} className="forecast-item">
                     <div className="forecast-date">
-                      {new Date(day.date * 1000).toLocaleDateString('en-US', { 
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric'
+                      {new Date(day.date * 1000).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
                       })}
                     </div>
-                    <img 
-                      src={allIcons[day.icon]} 
-                      alt="" 
+                    <img
+                      src={allIcons[day.icon]}
+                      alt=""
                       className="forecast-icon"
                     />
                     <div className="forecast-temp">
-                      <span className="max-temp">{Math.round(day.maxTemp)}°</span>
-                      <span className="min-temp">{Math.round(day.minTemp)}°</span>
+                      <span className="max-temp">
+                        {Math.round(day.maxTemp)}°
+                      </span>
+                      <span className="min-temp">
+                        {Math.round(day.minTemp)}°
+                      </span>
                     </div>
                     <div className="forecast-rain">
-                      {day.rainSum > 0 ? `${day.rainSum.toFixed(1)}mm` : 'No rain'}
+                      {day.rainSum > 0
+                        ? `${day.rainSum.toFixed(1)}mm`
+                        : "No rain"}
                     </div>
                   </div>
                 ))}
