@@ -59,18 +59,34 @@ function Weather() {
   const [showLocationModal, setShowLocationModal] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [alert, setAlert] = useState('');
+  const [hasShownModal, setHasShownModal] = useState(false);
 
   useEffect(() => {
-    window.addEventListener('load', () => {
+    const handleLoad = () => {
       setIsLoading(false);
-    });
+    };
+
+    // Check if the page is already loaded
+    if (document.readyState === 'complete') {
+      setIsLoading(false);
+    } else {
+      window.addEventListener('load', handleLoad);
+    }
 
     return () => {
-      window.removeEventListener('load', () => {
-        setIsLoading(false);
-      });
+      window.removeEventListener('load', handleLoad);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isLoading && !hasShownModal) {
+      const timer = setTimeout(() => {
+        setShowLocationModal(true);
+        setHasShownModal(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, hasShownModal]);
 
   const getForecast = async (lat, lon) => {
     try {
@@ -149,6 +165,7 @@ function Weather() {
   };
 
   const handleUseLocation = () => {
+    setShowLocationModal(false);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -192,7 +209,6 @@ function Weather() {
 
   const handleManualSearch = () => {
     setShowLocationModal(false);
-    // You can optionally focus the search input here
   };
 
   return (
