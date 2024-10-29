@@ -55,11 +55,15 @@ function Weather() {
   const [weatherData, setWeatherData] = useState(null);
   const [extendedForecast, setExtendedForecast] = useState(null);
   const inputRef = useRef(null);
-  const cities = ["Oslo", "Halden", "Lillestrøm", "Side", "Gan", "New York", "Sørumsand", "Tønsberg", "Horten"];
+  const cities = ["Oslo", "Halden", "Lillestrøm", "Side", "Gan", "New York"];
   const [showLocationModal, setShowLocationModal] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [alert, setAlert] = useState('');
   const [hasShownModal, setHasShownModal] = useState(false);
+  const [favorites, setFavorites] = useState(() => {
+    const saved = localStorage.getItem('favoritesCities');
+    return saved ? JSON.parse(saved) : ["Oslo", "Halden", "Lillestrøm"];
+  });
 
   useEffect(() => {
     const handleLoad = () => {
@@ -211,6 +215,20 @@ function Weather() {
     setShowLocationModal(false);
   };
 
+  const toggleFavorite = (cityName) => {
+    if (!cityName) return;
+    
+    setFavorites(prev => {
+      const newFavorites = prev.includes(cityName)
+        ? prev.filter(city => city !== cityName)
+        : [...prev, cityName];
+      
+      // Save to localStorage
+      localStorage.setItem('favoritesCities', JSON.stringify(newFavorites));
+      return newFavorites;
+    });
+  };
+
   return (
     <div className={`weather ${!isLoading ? 'loaded' : ''}`}>
       {isLoading ? (
@@ -264,20 +282,37 @@ function Weather() {
           </div>
 
           <div className="city-buttons">
-            {cities.map((city) => (
-              <button
-                key={city}
-                className="city-button"
-                onClick={() => {
-                  if (inputRef.current) {
-                    inputRef.current.value = city;
-                    search(city);
-                  }
-                }}
-              >
-                {city}
-              </button>
+            {favorites.map((city) => (
+              <div key={city} className="favorite-city-container">
+                <button
+                  className="city-button"
+                  onClick={() => {
+                    if (inputRef.current) {
+                      inputRef.current.value = city;
+                      search(city);
+                    }
+                  }}
+                >
+                  {city}
+                </button>
+                <button 
+                  className="remove-favorite"
+                  onClick={() => toggleFavorite(city)}
+                >
+                  ×
+                </button>
+              </div>
             ))}
+            {weatherData && (
+              <button
+                className="add-favorite"
+                onClick={() => toggleFavorite(weatherData.name)}
+                disabled={favorites.includes(weatherData.name)}
+              >
+                {favorites.includes(weatherData.name) ? '★' : '☆'} 
+                {favorites.includes(weatherData.name) ? 'I favoritter' : 'Legg til i favoritter'}
+              </button>
+            )}
           </div>
 
           {weatherData && (

@@ -570,3 +570,35 @@
     transform: translateY(0);
   }
 }
+
+.favorite-city-container {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.remove-favorite {
+  padding: 2px 6px;
+  background: rgba(255, 0, 0, 0.1);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #ff4444;
+}
+
+.add-favorite {
+  padding: 8px 16px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.add-favorite:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
