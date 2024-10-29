@@ -50,7 +50,7 @@ function WeeklyForecast({ location }) {
 
   return (
     <div className="weekly-forecast">
-      <h2>5-Day Forecast</h2>
+      <h2>5-Dagers Værmelding</h2>
       <div className="forecast-container">
         {forecastData.map((day, index) => (
           <div key={index} className="forecast-day">
@@ -66,7 +66,7 @@ function WeeklyForecast({ location }) {
             <p className="rain">
               {(day.rain && day.rain['3h']) ? 
                 `${Math.round(day.rain['3h'])} mm` : 
-                '0 mm'}
+                'Ingen nedbør'}
             </p>
           </div>
         ))}
