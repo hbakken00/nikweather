@@ -8,6 +8,10 @@ import rain_icon from "../assets/rain.png";
 import snow_icon from "../assets/snow.png";
 import wind_icon from "../assets/wind.png";
 import humidity_icon from "../assets/humidity.png";
+import WeeklyForecast from './WeeklyForecast';
+
+// --- NEW: (if you want a UV icon, add one, else just use ☀️ below)
+// import uv_icon from "../assets/uv.png"; 
 
 const allIcons = {
   "01d": clear_icon,
@@ -65,18 +69,19 @@ function Weather() {
     return saved ? JSON.parse(saved) : ["Oslo", "Halden", "Lillestrøm"];
   });
 
+  // --- NEW: Add UV index state
+  const [uvIndex, setUvIndex] = useState(null);
+  const [uvAlert, setUvAlert] = useState('');
+
   useEffect(() => {
     const handleLoad = () => {
       setIsLoading(false);
     };
-
-    // Check if the page is already loaded
     if (document.readyState === 'complete') {
       setIsLoading(false);
     } else {
       window.addEventListener('load', handleLoad);
     }
-
     return () => {
       window.removeEventListener('load', handleLoad);
     };
@@ -92,15 +97,39 @@ function Weather() {
     }
   }, [isLoading, hasShownModal]);
 
-  const getForecast = async (lat, lon) => {
+  // --- NEW: UV index fetcher
+  const fetchUVIndex = async (lat, lon) => {
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${
-          import.meta.env.VITE_APP_ID
-        }&units=metric`
+        `https://api.openweathermap.org/data/2.5/uvi?appid=${import.meta.env.VITE_APP_ID}&lat=${lat}&lon=${lon}`
       );
       const data = await response.json();
+      if (typeof data.value !== "undefined") {
+        setUvIndex(data.value);
+        setUvAlert('');
+      } else {
+        setUvAlert("UV-data ikke tilgjengelig.");
+        setUvIndex(null);
+      }
+    } catch (error) {
+      setUvAlert("Feil ved henting av UV-indeks.");
+      setUvIndex(null);
+    }
+  };
 
+  const getForecast = async (lat, lon) => {
+    try {
+      // Hent 5 dagers forecast
+      const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${import.meta.env.VITE_APP_ID}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      // Hent daglig UV (One Call API)
+      const uvUrl = `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&appid=${import.meta.env.VITE_APP_ID}&units=metric`;
+      const uvResponse = await fetch(uvUrl);
+      const uvData = await uvResponse.json();
+
+      // Gruppér forecast per dag (samme logikk som før)
       const groupedData = data.list.reduce((acc, item) => {
         const date = new Date(item.dt * 1000).toLocaleDateString();
         if (!acc[date]) {
@@ -117,15 +146,16 @@ function Weather() {
         return acc;
       }, {});
 
-      const processedData = Object.values(groupedData).map((day) => ({
+      const processedData = Object.values(groupedData).map((day, idx) => ({
         date: day.date,
         maxTemp: Math.max(...day.temps),
         minTemp: Math.min(...day.temps),
         icon: day.icons[Math.floor(day.icons.length / 2)],
         rainSum: day.rain.reduce((a, b) => a + b, 0),
+        uvi: uvData.daily && uvData.daily[idx] ? uvData.daily[idx].uvi : null,
       }));
 
-      setExtendedForecast(processedData);
+      setExtendedForecast(processedData.slice(0, 5));
     } catch (error) {
       console.error("Error fetching forecast:", error);
     }
@@ -134,7 +164,9 @@ function Weather() {
   const search = async (searchData) => {
     setIsLoading(true);
     setAlert('');
-    
+    setUvIndex(null); // --- NEW: Clear UV on search
+    setUvAlert('');
+
     try {
       const response = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?q=${searchData}&appid=${
@@ -146,15 +178,20 @@ function Weather() {
       if (data.cod === 200) {
         setWeatherData(data);
         getForecast(data.coord.lat, data.coord.lon);
+        fetchUVIndex(data.coord.lat, data.coord.lon); // --- NEW: fetch UV
       } else {
         setAlert(`Byen "${searchData}" ble ikke funnet. Prøv igjen med et mer kjent sted eller bynavn nære deg.`);
         setWeatherData(null);
         setExtendedForecast(null);
+        setUvIndex(null);
+        setUvAlert('');
       }
     } catch (error) {
       setAlert(`Feil ved henting av vær for "${searchData}". Vennligst prøv igjen.`);
       setWeatherData(null);
       setExtendedForecast(null);
+      setUvIndex(null);
+      setUvAlert('');
     } finally {
       setIsLoading(false);
     }
@@ -163,6 +200,8 @@ function Weather() {
   const handleReset = () => {
     setWeatherData(null);
     setExtendedForecast(null);
+    setUvIndex(null); // --- NEW: reset UV
+    setUvAlert('');
     if (inputRef.current) {
       inputRef.current.value = "";
     }
@@ -174,9 +213,7 @@ function Weather() {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
-          
           try {
-            // Fetch weather data using coordinates
             const response = await fetch(
               `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${
                 import.meta.env.VITE_APP_ID
@@ -186,18 +223,21 @@ function Weather() {
 
             if (data.cod === 200) {
               setWeatherData(data);
-              // Also fetch forecast data
               getForecast(latitude, longitude);
+              fetchUVIndex(latitude, longitude); // --- NEW: fetch UV
             }
           } catch (error) {
             console.error("Error fetching weather data:", error);
+            setUvIndex(null);
+            setUvAlert('');
           }
-
           setShowLocationModal(false);
         },
         (error) => {
           console.error("Error getting location:", error);
           setShowLocationModal(false);
+          setUvIndex(null);
+          setUvAlert('');
         },
         {
           enableHighAccuracy: true,
@@ -208,6 +248,8 @@ function Weather() {
     } else {
       console.error("Geolocation is not supported by this browser.");
       setShowLocationModal(false);
+      setUvIndex(null);
+      setUvAlert('');
     }
   };
 
@@ -217,13 +259,10 @@ function Weather() {
 
   const toggleFavorite = (cityName) => {
     if (!cityName) return;
-    
     setFavorites(prev => {
       const newFavorites = prev.includes(cityName)
         ? prev.filter(city => city !== cityName)
         : [...prev, cityName];
-      
-      // Save to localStorage
       localStorage.setItem('favoritesCities', JSON.stringify(newFavorites));
       return newFavorites;
     });
@@ -343,46 +382,22 @@ function Weather() {
                         <div className="text">Vindhastighet</div>
                       </div>
                     </div>
+                    {/* --- NEW: UV Index block */}
+                    <div className="element">
+                      {/* <img src={uv_icon} alt="" className="icon" /> */}
+                      <span className="icon" role="img" aria-label="UV">☀️</span>
+                      <div className="data">
+                        <div className="uv-index">
+                          {uvIndex !== null ? uvIndex : "—"}
+                        </div>
+                        <div className="text">UV-indeks</div>
+                      </div>
+                    </div>
                   </div>
+                  {uvAlert && <div className="alert">{uvAlert}</div>}
                 </div>
               </div>
-
-              {extendedForecast && (
-                <div className="forecast-section">
-                  <h2>5-Dag Forecast</h2>
-                  <div className="forecast-list">
-                    {extendedForecast.slice(0, 5).map((day, index) => (
-                      <div key={index} className="forecast-item">
-                        <div className="forecast-date">
-                          {new Date(day.date * 1000).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </div>
-                        <img
-                          src={allIcons[day.icon]}
-                          alt=""
-                          className="forecast-icon"
-                        />
-                        <div className="forecast-temp">
-                          <span className="max-temp">
-                            {Math.round(day.maxTemp)}°
-                          </span>
-                          <span className="min-temp">
-                            {Math.round(day.minTemp)}°
-                          </span>
-                        </div>
-                        <div className="forecast-rain">
-                          {day.rainSum > 0
-                            ? `${day.rainSum.toFixed(1)}mm`
-                            : "Ingen regn"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <WeeklyForecast forecastData={extendedForecast} />
             </>
           )}
         </>

@@ -1,10 +1,15 @@
 .weekly-forecast {
+  
+  background: var(--gradient);
+  backdrop-filter: var(--glass-effect);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 30px;
+  margin-top: 30px;
+
   width: 100%;
   margin-top: 30px;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
 }
 
 .weekly-forecast h2 {
@@ -26,10 +31,21 @@
   flex-direction: column;
   align-items: center;
   padding: 10px;
+  background: var(--secondary-bg);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08);
+}
+
+.forecast-day:hover {
+  border-color: var(--accent);
+  background: var(--hover-bg);
+  transform: translateY(-3px);
 }
 
 .forecast-day .day {
-  color: white;
+  color: var(--accent);
   font-size: 14px;
   margin-bottom: 8px;
 }
@@ -40,15 +56,20 @@
   margin: 8px 0;
 }
 
-.forecast-day .temp {
-  color: white;
+.forecast-day .temp,
+.forecast-day .max-temp {
+  color: var(--text-primary);
   font-size: 16px;
   font-weight: 500;
   margin-bottom: 4px;
 }
 
+.forecast-day .min-temp {
+  color: var(--text-secondary);
+}
+
 .forecast-day .rain {
-  color: #a8d5ff;
+  color: var(--text-muted);
   font-size: 14px;
   opacity: 0.9;
-} 
+}

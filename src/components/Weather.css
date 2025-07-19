@@ -1,15 +1,24 @@
 :root {
-  --primary-bg: rgba(23, 25, 35, 0.8);
-  --secondary-bg: rgba(38, 41, 55, 0.7);
+  --primary-bg: rgba(23, 25, 35, 0.589);
+  --secondary-bg: rgba(38, 41, 55, 0.555);
   --hover-bg: rgba(45, 48, 65, 0.9);
   --text-primary: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.7);
   --accent: #6ee7b7;
-  --gradient: linear-gradient(135deg, rgba(23, 25, 35, 0.9), rgba(38, 41, 55, 0.8));
+  --gradient: linear-gradient(120deg, rgba(23, 25, 35, 0.801), rgba(38, 41, 55, 0.062));
   --glass-effect: blur(10px);
 }
 
-
+.uv-index {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  padding: 10px 15px;
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 400;
+}
 
 .weather {
   width: 100%;
